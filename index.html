@@ -1,1 +1,531 @@
 
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Xin Chao</title>
+    <style>
+        :root {
+            --primary-color: #00f2ff;
+            --accent-color: #7000ff;
+            --bg-color: #020205;
+            --card-width: 180px;
+            --card-height: 280px;
+            --neon-glow: 0 0 20px rgba(0, 242, 255, 0.5), 0 0 40px rgba(112, 0, 255, 0.3);
+        }
+
+        @media (max-width: 768px) {
+            :root {
+                --card-width: 140px;
+                --card-height: 220px;
+            }
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg-color);
+            overflow: hidden;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            color: white;
+            height: 100vh;
+            perspective: 2000px;
+            touch-action: none;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        #canvas-bg {
+            position: fixed;
+            inset: 0;
+            z-index: -1;
+            background: radial-gradient(circle at center, #0a0a20 0%, #020205 100%);
+        }
+
+        .stage {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            transform-style: preserve-3d;
+            visibility: hidden;
+            opacity: 0;
+            transition: opacity 1s ease;
+            will-change: opacity;
+        }
+
+        #container {
+            position: relative;
+            width: var(--card-width);
+            height: var(--card-height);
+            transform-style: preserve-3d;
+            transform: rotateX(-10deg);
+            transition: transform 0.2s ease-out;
+            will-change: transform;
+        }
+
+        .media {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 16px;
+            cursor: pointer;
+            transition: transform 0.8s cubic-bezier(0.23, 1, 0.32, 1), 
+                        filter 0.6s ease, 
+                        opacity 0.6s ease,
+                        box-shadow 0.6s ease;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.8);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            -webkit-box-reflect: below 15px linear-gradient(transparent, rgba(0,0,0,0.1), rgba(0,0,0,0.2));
+            pointer-events: auto;
+            will-change: transform;
+        }
+
+        .media:hover {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.4);
+        }
+
+        .media.active {
+            transform: rotateY(0deg) translateZ(450px) scale(2.2) !important;
+            z-index: 5000;
+            box-shadow: 0 0 80px var(--primary-color), 0 0 120px var(--accent-color);
+            border: 2px solid #fff;
+            filter: brightness(1.1);
+        }
+
+        .media.blur {
+            filter: blur(12px) brightness(0.2);
+            opacity: 0.2;
+            pointer-events: none;
+        }
+
+        #popup {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.9);
+            backdrop-filter: blur(30px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        #popupBox {
+            background: rgba(15, 15, 25, 0.8);
+            padding: 40px;
+            border-radius: 30px;
+            text-align: center;
+            border: 1px solid rgba(0, 242, 255, 0.3);
+            max-width: 400px;
+            width: 85%;
+            box-shadow: var(--neon-glow);
+        }
+
+        #greeting-screen {
+            position: fixed;
+            inset: 0;
+            background: black;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 10000;
+            opacity: 0;
+            transition: opacity 1s ease;
+        }
+
+        #greeting-text {
+            font-size: 32px;
+            font-weight: 800;
+            background: linear-gradient(90deg, #00f2ff, #7000ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            letter-spacing: 2px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            50% { opacity: 0.7; transform: scale(1.05); }
+        }
+
+        .input-group {
+            margin: 25px 0;
+            position: relative;
+        }
+
+        input[type="password"] {
+            width: 100%;
+            padding: 15px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            color: white;
+            text-align: center;
+            font-size: 18px;
+            letter-spacing: 5px;
+            outline: none;
+            transition: 0.3s;
+            box-sizing: border-box;
+        }
+
+        input[type="password"]:focus {
+            border-color: var(--primary-color);
+            background: rgba(0, 242, 255, 0.05);
+        }
+
+        button {
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            color: white;
+            border: none;
+            padding: 14px 35px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-weight: 700;
+            transition: 0.4s;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            font-size: 14px;
+            width: 100%;
+            box-shadow: 0 4px 15px rgba(112, 0, 255, 0.4);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 25px rgba(0, 242, 255, 0.5);
+        }
+
+        #alert-box {
+            position: fixed;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%) translateY(-100px);
+            background: rgba(255, 77, 77, 0.9);
+            color: white;
+            padding: 15px 30px;
+            border-radius: 10px;
+            z-index: 10001;
+            transition: 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        #alert-box.show { transform: translateX(-50%) translateY(0); }
+
+        .controls {
+            position: fixed;
+            bottom: 40px;
+            right: 30px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            z-index: 1000;
+            opacity: 0;
+            transition: 1s;
+        }
+
+        .control-btn {
+            width: 55px;
+            height: 55px;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            font-size: 20px;
+            transition: 0.3s;
+            box-shadow: var(--neon-glow);
+        }
+
+        .control-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: scale(1.1);
+        }
+
+        .progress-bar {
+            position: fixed;
+            top: 0; left: 0; height: 4px;
+            background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+            z-index: 10000;
+            box-shadow: 0 0 10px var(--primary-color);
+            will-change: width;
+        }
+    </style>
+</head>
+<body>
+
+<canvas id="canvas-bg"></canvas>
+<div class="progress-bar" id="progressBar"></div>
+<div id="alert-box">Hành động bị cấm!</div>
+
+<div id="greeting-screen">
+    <div id="greeting-text">Hello! ✨</div>
+</div>
+
+<div id="popup">
+    <div id="popupBox">
+        <h2 style="margin: 0 0 10px 0; background: linear-gradient(90deg, #00f2ff, #7000ff); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">XÁC THỰC DANH TÍNH</h2>
+        <div class="input-group">
+            <input type="password" id="passwordInput" placeholder="••••••••">
+            <div id="error-msg" style="color:#ff4d4d; font-size:12px; display:none; margin-top:5px;">Mật khẩu không chính xác!</div>
+        </div>
+        <button onclick="checkPassword()">TRUY CẬP HỆ THỐNG</button>
+    </div>
+</div>
+
+<div class="stage" id="mainStage">
+    <div id="container"></div>
+</div>
+
+<div class="controls" id="mainControls">
+    <div class="control-btn" id="musicBtn" title="Nhạc nền">🎵</div>
+</div>
+
+<div id="player" style="display:none;"></div>
+
+<script src="https://www.youtube.com/watch?v=8MFBEpuB9-I"></script>
+
+<script>
+const CONFIG = {
+    password: "10082010",
+    youtubeLink: "https://www.youtube.com/watch?v=8MFBEpuB9-I",
+    baseImages: [
+        "https://i.postimg.cc/HsYbwN4F/photo-6284884348309802854-y.jpg",
+        "https://i.postimg.cc/TYdnVsqZ/photo-6284884348309802855-y.jpg",
+        "https://i.postimg.cc/G3JksRG1/photo-6284884348309802856-y.jpg"
+    ]
+};
+
+const displayImages = [...CONFIG.baseImages, ...CONFIG.baseImages, ...CONFIG.baseImages];
+
+let rotationY = 0;
+let autoRotate = true;
+let isFocused = false;
+let isDragging = false;
+let startX = 0;
+let radius = window.innerWidth < 768 ? 320 : 550;
+const elements = [];
+
+function checkPassword() {
+    const input = document.getElementById('passwordInput');
+    if (input.value === CONFIG.password) {
+        unlock();
+    } else {
+        document.getElementById('error-msg').style.display = 'block';
+        input.value = '';
+    }
+}
+
+function unlock() {
+    const popup = document.getElementById("popup");
+    const greeting = document.getElementById("greeting-screen");
+    popup.style.opacity = "0";
+    setTimeout(() => {
+        popup.style.display = "none";
+        greeting.style.display = "flex";
+        setTimeout(() => greeting.style.opacity = "1", 50);
+        setTimeout(() => {
+            greeting.style.opacity = "0";
+            setTimeout(() => {
+                greeting.style.display = "none";
+                document.getElementById("mainStage").style.visibility = "visible";
+                document.getElementById("mainStage").style.opacity = "1";
+                document.getElementById("mainControls").style.opacity = "1";
+                if (player) player.playVideo();
+            }, 1000);
+        }, 2000);
+    }, 800);
+}
+
+function initCarousel() {
+    const container = document.getElementById("container");
+    container.innerHTML = "";
+    elements.length = 0;
+
+    displayImages.forEach((src, i) => {
+        const img = document.createElement("img");
+        img.src = src;
+        img.className = "media";
+        const angle = (360 / displayImages.length) * i;
+        img.dataset.angle = angle;
+        img.style.transform = `rotateY(${angle}deg) translateZ(${radius}px)`;
+        
+        img.onclick = (e) => {
+            e.stopPropagation();
+            if (!isFocused) {
+                img.classList.add("active");
+                elements.forEach(el => { 
+                    if (el !== img) el.classList.add("blur"); 
+                });
+                isFocused = true; 
+                autoRotate = false;
+            } else if (img.classList.contains('active')) {
+                resetFocus();
+            }
+        };
+        container.appendChild(img);
+        elements.push(img);
+    });
+}
+
+function resetFocus() {
+    elements.forEach(el => {
+        el.classList.remove("active", "blur");
+        const angle = el.dataset.angle;
+        el.style.transform = `rotateY(${angle}deg) translateZ(${radius}px)`;
+    });
+    isFocused = false; 
+    autoRotate = true;
+}
+
+document.body.onclick = () => {
+    if (isFocused) resetFocus();
+};
+
+const handleStart = (e) => { 
+    if (isFocused) return; 
+    isDragging = true; 
+    startX = e.pageX || (e.touches && e.touches[0].pageX); 
+    autoRotate = false; 
+};
+
+const handleMove = (e) => {
+    if (!isDragging || isFocused) return;
+    const x = e.pageX || (e.touches && e.touches[0].pageX);
+    const delta = (x - startX) * 0.2;
+    rotationY += delta;
+    startX = x;
+    document.getElementById("container").style.transform = `rotateX(-10deg) rotateY(${rotationY}deg)`;
+};
+
+const handleEnd = () => { 
+    isDragging = false; 
+    if (!isFocused) setTimeout(() => { if(!isDragging && !isFocused) autoRotate = true; }, 1500); 
+};
+
+window.addEventListener('mousedown', handleStart);
+window.addEventListener('mousemove', handleMove);
+window.addEventListener('mouseup', handleEnd);
+window.addEventListener('touchstart', handleStart, {passive:true});
+window.addEventListener('touchmove', handleMove, {passive:true});
+window.addEventListener('touchend', handleEnd);
+
+function animate() {
+    if (autoRotate && !isFocused && !isDragging) {
+        rotationY += 0.3;
+        document.getElementById("container").style.transform = `rotateX(-10deg) rotateY(${rotationY}deg)`;
+    }
+    const prog = (Math.abs(rotationY) % 360) / 3.6;
+    const pb = document.getElementById("progressBar");
+    if (pb) pb.style.width = `${prog}%`;
+    requestAnimationFrame(animate);
+}
+
+const canvas = document.getElementById('canvas-bg');
+const ctx = canvas.getContext('2d');
+let particles = [];
+
+class Particle {
+    constructor() {
+        this.reset();
+    }
+    reset() {
+        this.x = Math.random() * canvas.width;
+        this.y = Math.random() * canvas.height;
+        this.vx = (Math.random() - 0.5) * 0.5;
+        this.vy = (Math.random() - 0.5) * 0.5;
+        this.size = Math.random() * 2 + 1;
+        this.color = Math.random() > 0.5 ? '#00f2ff' : '#7000ff';
+    }
+    update() {
+        this.x += this.vx;
+        this.y += this.vy;
+        if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
+        if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+    }
+    draw() {
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+}
+
+function initParticles() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    particles = [];
+    for (let i = 0; i < 80; i++) particles.push(new Particle());
+}
+
+function drawParticles() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    for (let i = 0; i < particles.length; i++) {
+        particles[i].update();
+        particles[i].draw();
+        
+        for (let j = i + 1; j < particles.length; j++) {
+            const dx = particles[i].x - particles[j].x;
+            const dy = particles[i].y - particles[j].y;
+            const dist = Math.sqrt(dx * dx + dy * dy);
+            if (dist < 100) {
+                ctx.strokeStyle = `rgba(0, 242, 255, ${1 - dist/100})`;
+                ctx.lineWidth = 0.5;
+                ctx.beginPath();
+                ctx.moveTo(particles[i].x, particles[i].y);
+                ctx.lineTo(particles[j].x, particles[j].y);
+                ctx.stroke();
+            }
+        }
+    }
+    requestAnimationFrame(drawParticles);
+}
+
+let player;
+function onYouTubeIframeAPIReady() {
+    const vId = CONFIG.youtubeLink.match(/[?&]v=([^&]+)/)?.[1] || CONFIG.youtubeLink;
+    player = new YT.Player('player', {
+        videoId: vId,
+        playerVars: { autoplay: 0, controls: 0, loop: 1, playlist: vId },
+        events: { 'onStateChange': (e) => {
+            const btn = document.getElementById("musicBtn");
+            if (btn) btn.innerHTML = e.data === 1 ? "⏸️" : "🎵";
+        }}
+    });
+}
+
+document.getElementById("musicBtn").onclick = (e) => {
+    e.stopPropagation();
+    if (!player || typeof player.getPlayerState !== 'function') return;
+    player.getPlayerState() === 1 ? player.pauseVideo() : player.playVideo();
+};
+
+window.onload = () => {
+    initCarousel(); 
+    initParticles(); 
+    drawParticles(); 
+    animate();
+};
+
+window.onresize = () => {
+    radius = window.innerWidth < 768 ? 320 : 550;
+    initParticles();
+    elements.forEach((img, i) => {
+        const angle = img.dataset.angle;
+        if (!img.classList.contains('active')) {
+            img.style.transform = `rotateY(${angle}deg) translateZ(${radius}px)`;
+        }
+    });
+};
+</script>
+</body>
+</html>
